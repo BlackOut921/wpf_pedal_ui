@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.9.34728.123
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "wpf_pedal_ui", "wpf_pedal_ui.csproj", "{4BDBB810-36E2-4E0A-A77C-CFCEFA6F44B7}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{4BDBB810-36E2-4E0A-A77C-CFCEFA6F44B7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4BDBB810-36E2-4E0A-A77C-CFCEFA6F44B7}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4BDBB810-36E2-4E0A-A77C-CFCEFA6F44B7}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4BDBB810-36E2-4E0A-A77C-CFCEFA6F44B7}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {EA238F62-6394-4843-AF71-D5E3E62C5D1C}
+	EndGlobalSection
+EndGlobal
