@@ -29,12 +29,13 @@
         </Grid.ColumnDefinitions>
 
         <!-- row 0 -->
+        <TextBlock Grid.Row="0" Grid.Column="7" Foreground="white" HorizontalAlignment="Center">Device</TextBlock>
         
         <!-- row 1 -->
         <Button Background="white" Grid.Row="1" Grid.Column="2" Name="BtnClear" Click="BtnClear_Click">
             <TextBlock Foreground="black">Clear</TextBlock>
         </Button>
-        <TextBlock Grid.Row="0" Grid.Column="7" Foreground="white" HorizontalAlignment="Center">Device</TextBlock>
+        <TextBlock Name="txtOutput" Foreground="White" Grid.Row="1" Grid.Column="5" TextAlignment="Center" VerticalAlignment="Center" TextWrapping="Wrap">OUTPUT</TextBlock>
         <ListBox Name="DeviceList" Grid.Column="7" Grid.Row="1" Background="#303030" Foreground="White" SelectionChanged="DeviceList_SelectionChanged"></ListBox>
 
         <!-- row 2 -->
@@ -69,7 +70,5 @@
         <Button Background="Orange" Grid.Row="4" Grid.Column="7" Name="BtnTrackFour" Click="BtnTrackFour_Click">
             <TextBlock Foreground="White">4</TextBlock>
         </Button>
-
-        <TextBlock Name="txtOutput" Foreground="White" Grid.Row="1" Grid.Column="4" TextAlignment="Center" VerticalAlignment="Center" TextWrapping="Wrap">0</TextBlock>
     </Grid>
 </Window>

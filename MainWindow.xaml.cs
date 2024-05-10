@@ -3,9 +3,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
 
-using Melanchall.DryWetMidi.Multimedia;
-
-using Midi = Melanchall.DryWetMidi.Multimedia;
+using NAudio.Midi;
 
 namespace wpf_pedal_ui
 {
@@ -23,19 +21,26 @@ namespace wpf_pedal_ui
 		private PedalMode _mode = PedalMode.Record;
 		private PedalState _state = PedalState.None;
 
-		private Midi.InputDevice? _inputDevice = null;
+		private MidiIn? _device = null;
 
 		public MainWindow()
 		{
 			InitializeComponent();
 
 			//Get all midi devices connected and update listbox
-			ICollection<Midi.InputDevice> d = Midi.InputDevice.GetAll();
+			/*ICollection<Midi.InputDevice> d = Midi.InputDevice.GetAll();
 			if (d.Count > 0)
 			{
 				foreach (Midi.InputDevice i in d)
 				{
 					this.DeviceList.Items.Add(i.Name);
+				}
+			}*/
+			if(MidiIn.NumberOfDevices > 0)
+			{
+				for(int i = 0; i < MidiIn.NumberOfDevices; i++)
+				{
+					DeviceList.Items.Add(MidiIn.DeviceInfo(i).ProductName);
 				}
 			}
 
@@ -118,23 +123,22 @@ namespace wpf_pedal_ui
 
 		private void DeviceList_SelectionChanged(object sender, SelectionChangedEventArgs e)
 		{
-			string deviceName = (DeviceList.SelectedItem != null) ? (string)DeviceList.SelectedItem : "null";
-
-			if(deviceName != "null")
+			int _deviceIndex = DeviceList.SelectedIndex;
+			
+			if(_deviceIndex != -1)
 			{
-				if (_inputDevice != null)
+				if(_device != null)
 				{
-					_inputDevice.StopEventsListening();
-					(_inputDevice as IDisposable)?.Dispose();
+					_device.Stop();
+					_device.Dispose();
 				}
 
-				//Setup midi device
-				_inputDevice = Midi.InputDevice.GetByName(deviceName); //"MPKmini2"
-				_inputDevice.EventReceived += OnEventReceived;
-				_inputDevice.StartEventsListening();
+				_device = new MidiIn(_deviceIndex);
+				_device.MessageReceived += midiIn_MessageReceived;
+				_device.Start();
 			}
 
-			txtOutput.Text = deviceName;
+			txtOutput.Text = "Selected device" + _deviceIndex.ToString();
 		}
 
 		private void BtnPlayRec_Click(object sender, RoutedEventArgs e)
@@ -226,30 +230,19 @@ namespace wpf_pedal_ui
 			}
 		}
 
-		private void OnEventReceived(object? sender, Midi.MidiEventReceivedEventArgs e)
-		{
-			Dispatcher.Invoke(() => {
-				txtOutput.Text = "MIDI RECEIVED (" + e.Event.ToString() + ")";
-
-				//select track 1 = 53
-				
-			});
-		}
-
-		private void OnEventSent(object sender, Midi.MidiEventSentEventArgs e)
-		{
-			
-		}
-
 		protected override void OnClosing(CancelEventArgs e)
 		{
 			base.OnClosing(e);
 
-			if(_inputDevice != null)
-			{
-				_inputDevice.StopEventsListening();
-				(_inputDevice as IDisposable)?.Dispose();
-			}
+			//
+		}
+
+		private void midiIn_MessageReceived(object sender, MidiInMessageEventArgs e)
+		{
+			this.Dispatcher.Invoke(() => {
+				NoteEvent _note = (NoteEvent)e.MidiEvent;
+				txtOutput.Text = _note.NoteName;
+			});
 		}
 	}
 }
