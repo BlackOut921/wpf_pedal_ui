@@ -28,15 +28,6 @@ namespace wpf_pedal_ui
 		{
 			InitializeComponent();
 
-			//Get all midi devices connected and update listbox
-			/*ICollection<Midi.InputDevice> d = Midi.InputDevice.GetAll();
-			if (d.Count > 0)
-			{
-				foreach (Midi.InputDevice i in d)
-				{
-					this.DeviceList.Items.Add(i.Name);
-				}
-			}*/
 			if (MidiIn.NumberOfDevices > 0)
 			{
 				for (int i = 0; i < MidiIn.NumberOfDevices; i++)
@@ -244,13 +235,6 @@ namespace wpf_pedal_ui
 			}
 		}
 
-		protected override void OnClosing(CancelEventArgs e)
-		{
-			base.OnClosing(e);
-
-			//
-		}
-
 		private void midiIn_MessageReceived(object sender, MidiInMessageEventArgs e)
 		{
 			this.Dispatcher.Invoke(() =>
@@ -288,6 +272,30 @@ namespace wpf_pedal_ui
 					if (_note.NoteNumber == _midiNotes[6] + 12) { ToggleMuteTrack(3); }  //Toggle mute track 4
 				}
 			});
+		}
+
+		private void BtnMinimise_Click(object sender, RoutedEventArgs e)
+		{
+			WindowState = WindowState.Minimized;
+		}
+
+		private void BtnClose_Click(object sender, RoutedEventArgs e)
+		{
+			if(_device != null)
+			{
+				_device.MessageReceived -= midiIn_MessageReceived;
+				_device.Stop();
+				_device.Dispose();
+			}
+			
+			Application.Current.Shutdown();
+		}
+
+		protected override void OnClosing(CancelEventArgs e)
+		{
+			base.OnClosing(e);
+
+			//
 		}
 	}
 }
