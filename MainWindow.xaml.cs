@@ -1,4 +1,5 @@
 ﻿using System;
+using System.ComponentModel;
 using System.Reflection;
 using System.Windows;
 using System.Windows.Controls;
@@ -13,6 +14,7 @@ namespace wpf_pedal_ui
 	/// </summary>
 	public partial class MainWindow : Window
 	{
+		private enum MidiMode { Send, Receive };
 		private enum PedalMode { Record, Play, Auto };
 		private enum PedalState { None, Record, Overdub, Play, Stop };
 		private readonly int[] _midiNotes = { 40, 41, 43, 53, 55, 57, 59 };
@@ -22,9 +24,11 @@ namespace wpf_pedal_ui
 		private int _selectedTrack = 0; //0, 1; 2; 3;		
 		private PedalMode _mode = PedalMode.Record;
 		private PedalState _state = PedalState.None;
+		private MidiMode _midiMode = MidiMode.Receive;
 
 		private MidiIn? _fromPedal = null;
 		private MidiOut? _toPedal = null;
+		private MidiOut? _softwareOut = null;
 
 		public MainWindow()
 		{
@@ -35,20 +39,24 @@ namespace wpf_pedal_ui
 			_trackLeds[2] = ledTrackThree;
 			_trackLeds[3] = ledTrackFour;
 
-			ScanDevices();
+			ScanForDevices();
 			Clear();
 		}
 
 		private void SendNotetoPedal(int noteNumber)
 		{
+			NoteOnEvent note = new NoteOnEvent(0, 1, noteNumber, 127, 0);
+
 			if (_toPedal != null)
-			{
-				NoteOnEvent note = new NoteOnEvent(0, 1, noteNumber, 127, 0);
 				_toPedal.Send(note.GetAsShortMessage());
-			}
+
+			if (_softwareOut != null)
+				_softwareOut.Send(note.GetAsShortMessage());
+
+			txtOutput.Text = _midiMode.ToString();
 		}
 
-		private void ScanDevices()
+		private void ScanForDevices()
 		{
 			if (MidiIn.NumberOfDevices > 0)
 			{
@@ -155,7 +163,9 @@ namespace wpf_pedal_ui
 			for (int i = 0; i < _trackLeds.Length; i++)
 				_trackLeds[i].Background = (i == index) ? Brushes.Red : Brushes.Transparent;
 
-			SendNotetoPedal(_midiNotes[index + 3]);
+			if(_midiMode == MidiMode.Send)
+				SendNotetoPedal(_midiNotes[index + 3]);
+
 			UpdateUI();
 		}
 
@@ -175,33 +185,49 @@ namespace wpf_pedal_ui
 			UpdateUI();
 		}
 
-		private void InputDeviceList_SelectionChanged(object sender, SelectionChangedEventArgs e)
+		private void midiIn_MessageReceived(object sender, MidiInMessageEventArgs e)
 		{
-			int deviceIndex = InputDeviceList.SelectedIndex;
-			if (deviceIndex != -1)
-			{
-				if(_fromPedal != null)
+			this.Dispatcher.Invoke(() => {
+				_midiMode = MidiMode.Receive;
+				if(_midiMode == MidiMode.Receive)
 				{
-					_fromPedal.Stop();
-					_fromPedal.Dispose();
+					NoteEvent _note = (NoteEvent)e.MidiEvent;
+					if (_note.CommandCode == MidiCommandCode.NoteOn)
+					{
+						//_midiNotes = [40, 41, 43, 53, 55, 57, 59]
+						/* _midiNotes[0] = CLEAR(E1)
+						 * _midiNotes[1] = REC/PLAY(F1)
+						 * _midiNotes[2] = STOP(G1)
+						 * _midiNotes[3] = TRACK 1(0)/UNDO(+1)/MUTE(+12)/PLAY(+24)/OVERDUB(+25)
+						 * _midiNotes[4] = TRACK 2(0)/UNDO(+1)/MUTE(+12)/PLAY(+24)/OVERDUB(+25)
+						 * _midiNotes[5] = TRACK 3(0)/UNDO(+1)/MUTE(+12)/PLAY(+24)/OVERDUB(+25)
+						 * _midiNotes[6] = TRACK 4(0)/UNDO(+1)/MUTE(+12)/PLAY(+24)/OVERDUB(+25)*/
+
+						if (_note.NoteNumber == _midiNotes[0]) Clear(); //Clear
+						if (_note.NoteNumber == _midiNotes[1]) ChangeState(); //Record/Overdub/Play
+						if (_note.NoteNumber == _midiNotes[2]) Stop(); //Stop all
+						if (_note.NoteNumber == _midiNotes[0] - 2) ChangeMode(); //RecMode/PlayMode
+
+						//Track 1
+						if (_note.NoteNumber == _midiNotes[3]) SelectTrack(0);
+						if (_note.NoteNumber == _midiNotes[3] + 12) ToggleMuteTrack(0);
+
+						//Track 2
+						if (_note.NoteNumber == _midiNotes[4]) SelectTrack(1);
+						if (_note.NoteNumber == _midiNotes[4] + 12) ToggleMuteTrack(1);
+
+						//Track 3
+						if (_note.NoteNumber == _midiNotes[5]) SelectTrack(2);
+						if (_note.NoteNumber == _midiNotes[5] + 12) ToggleMuteTrack(2);
+
+						//Track 4
+						if (_note.NoteNumber == _midiNotes[6]) SelectTrack(3);
+						if (_note.NoteNumber == _midiNotes[6] + 12) ToggleMuteTrack(3);
+
+						txtOutput.Text = _midiMode.ToString();
+					}
 				}
-
-				_fromPedal = new MidiIn(deviceIndex);
-				_fromPedal.MessageReceived += midiIn_MessageReceived;
-				_fromPedal.Start();
-			}
-		}
-
-		private void OutputDeviceList_SelectionChanged(object sender, SelectionChangedEventArgs e)
-		{
-			int deviceIndex = OutputDeviceList.SelectedIndex;
-			if(deviceIndex != -1)
-			{
-				if (_toPedal != null)
-					_toPedal.Dispose();
-
-				_toPedal = new MidiOut(deviceIndex);
-			}
+			});
 		}
 
 		private void BtnPlayRec_Click(object sender, RoutedEventArgs e)
@@ -226,6 +252,7 @@ namespace wpf_pedal_ui
 
 		private void BtnTrackOne_Click(object sender, RoutedEventArgs e)
 		{
+			_midiMode = MidiMode.Send;
 			if (_mode == PedalMode.Record)
 			{
 				SelectTrack(0);
@@ -238,6 +265,7 @@ namespace wpf_pedal_ui
 
 		private void BtnTTrackTwo_Click(object sender, RoutedEventArgs e)
 		{
+			_midiMode = MidiMode.Send;
 			if (_mode == PedalMode.Record)
 			{
 				SelectTrack(1);
@@ -250,6 +278,7 @@ namespace wpf_pedal_ui
 
 		private void BtnTrackThree_Click(object sender, RoutedEventArgs e)
 		{
+			_midiMode = MidiMode.Send;
 			if (_mode == PedalMode.Record)
 			{
 				SelectTrack(2);
@@ -262,6 +291,7 @@ namespace wpf_pedal_ui
 
 		private void BtnTrackFour_Click(object sender, RoutedEventArgs e)
 		{
+			_midiMode = MidiMode.Send;
 			if (_mode == PedalMode.Record)
 			{
 				SelectTrack(3);
@@ -272,69 +302,54 @@ namespace wpf_pedal_ui
 			}
 		}
 
-		private void midiIn_MessageReceived(object sender, MidiInMessageEventArgs e)
+		private void BtnScanDevices_Click(object sender, RoutedEventArgs e)
 		{
-			this.Dispatcher.Invoke(() =>
-			{
-				NoteEvent _note = (NoteEvent)e.MidiEvent;
+			ScanForDevices();
+		}
 
-				if (_note.CommandCode == MidiCommandCode.NoteOn)
+		private void InputDeviceList_SelectionChanged(object sender, SelectionChangedEventArgs e)
+		{
+			int deviceIndex = InputDeviceList.SelectedIndex;
+			if (deviceIndex != -1)
+			{
+				if (_fromPedal != null)
 				{
-					//_midiNotes = [40, 41, 43, 53, 55, 57, 59]
-					/* _midiNotes[0] = CLEAR(E1)
-					 * _midiNotes[1] = REC/PLAY(F1)
-					 * _midiNotes[2] = STOP(G1)
-					 * _midiNotes[3] = TRACK 1(0)/UNDO(+1)/MUTE(+12)/PLAY(+24)/OVERDUB(+25)
-					 * _midiNotes[4] = TRACK 2(0)/UNDO(+1)/MUTE(+12)/PLAY(+24)/OVERDUB(+25)
-					 * _midiNotes[5] = TRACK 3(0)/UNDO(+1)/MUTE(+12)/PLAY(+24)/OVERDUB(+25)
-					 * _midiNotes[6] = TRACK 4(0)/UNDO(+1)/MUTE(+12)/PLAY(+24)/OVERDUB(+25)*/
-
-					if (_note.NoteNumber == _midiNotes[0]) Clear(); //Clear
-					if (_note.NoteNumber == _midiNotes[1]) ChangeState(); //Record/Overdub/Play
-					if (_note.NoteNumber == _midiNotes[2]) Stop(); //Stop all
-					if (_note.NoteNumber == _midiNotes[0] - 2) ChangeMode(); //RecMode/PlayMode
-
-					//Track 1
-					if (_note.NoteNumber == _midiNotes[3]) SelectTrack(0);
-					if (_note.NoteNumber == _midiNotes[3] + 12) ToggleMuteTrack(0);
-
-					//Track 2
-					if (_note.NoteNumber == _midiNotes[4]) SelectTrack(1);
-					if (_note.NoteNumber == _midiNotes[4] + 12) ToggleMuteTrack(1);
-
-					//Track 3
-					if (_note.NoteNumber == _midiNotes[5]) SelectTrack(2);
-					if (_note.NoteNumber == _midiNotes[5] + 12) ToggleMuteTrack(2);
-
-					//Track 4
-					if (_note.NoteNumber == _midiNotes[6]) SelectTrack(3);						
-					if (_note.NoteNumber == _midiNotes[6] + 12) ToggleMuteTrack(3);
+					_fromPedal.Stop();
+					_fromPedal.Dispose();
 				}
-			});
+
+				_fromPedal = new MidiIn(deviceIndex);
+				_fromPedal.MessageReceived += midiIn_MessageReceived;
+				_fromPedal.Start();
+			}
 		}
 
-		private void BtnMinimise_Click(object sender, RoutedEventArgs e)
+		private void OutputDeviceList_SelectionChanged(object sender, SelectionChangedEventArgs e)
 		{
-			WindowState = WindowState.Minimized;
-		}
-
-		private void BtnClose_Click(object sender, RoutedEventArgs e)
-		{
-			if (_fromPedal != null)
+			int deviceIndex = OutputDeviceList.SelectedIndex;
+			if (deviceIndex != -1)
 			{
-				_fromPedal.MessageReceived -= midiIn_MessageReceived;
+				if (_toPedal != null)
+					_toPedal.Dispose();
+
+				_softwareOut?.Dispose();
+				_softwareOut = new MidiOut(0);
+
+				_toPedal = new MidiOut(deviceIndex);
+			}
+		}
+
+		protected override void OnClosing(CancelEventArgs e)
+		{
+			base.OnClosing(e);
+
+			if(_fromPedal != null)
+			{
 				_fromPedal.Stop();
 				_fromPedal.Dispose();
 			}
 
 			_toPedal?.Dispose();
-
-			Application.Current.Shutdown();
-		}
-
-		private void BtnScanDevices_Click(object sender, RoutedEventArgs e)
-		{
-			ScanDevices();
 		}
 	}
 }
