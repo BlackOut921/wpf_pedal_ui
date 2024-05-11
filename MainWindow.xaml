@@ -32,6 +32,7 @@
             </Grid.ColumnDefinitions>
 
             <!-- row 0 -->
+            <Button Grid.Row="0" Grid.Column="0" Name="BtnScanDevices" Click="BtnScanDevices_Click">Scan devices</Button>
             <Button Grid.Column="6" Background="White" Foreground="Black" Name="BtnMinimise" Click="BtnMinimise_Click">Minimise</Button>
             <Button Grid.Column="7" Background="Red" Foreground="White" Name="BtnClose" Click="BtnClose_Click">Close</Button>
 
@@ -40,10 +41,11 @@
                 <TextBlock Foreground="black">Clear</TextBlock>
             </Button>
             <TextBlock Name="txtOutput" Foreground="White" Grid.Row="1" Grid.Column="6" TextAlignment="Center" VerticalAlignment="Center" TextWrapping="Wrap"></TextBlock>
-            <ListBox Name="DeviceList" Grid.Column="7" Grid.Row="1" Background="#303030" Foreground="White" SelectionChanged="DeviceList_SelectionChanged"></ListBox>
+            <ListBox Name="InputDeviceList" Grid.Row="1" Grid.Column="6" Background="#303030" Foreground="White" SelectionChanged="InputDeviceList_SelectionChanged"></ListBox>
+            <ListBox Name="OutputDeviceList" Grid.Row="1" Grid.Column="7" Background="#303030" Foreground="White" SelectionChanged="OutputDeviceList_SelectionChanged"></ListBox>
 
             <!-- row 2 -->
-            <ListBox Name="OutputDeviceList" Grid.Row="2" Grid.Column="7" Background="#303030" Foreground="White" SelectionChanged="OutputDeviceList_SelectionChanged"></ListBox>
+            
 
             <!-- row 3 -->
             <Border Grid.Row="3" Grid.Column="0" Background="Transparent" Name="ledPlayRec"></Border>

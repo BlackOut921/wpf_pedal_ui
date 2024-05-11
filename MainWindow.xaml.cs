@@ -1,4 +1,6 @@
-﻿using System.Windows;
+﻿using System;
+using System.Reflection;
+using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
 
@@ -28,28 +30,45 @@ namespace wpf_pedal_ui
 		{
 			InitializeComponent();
 
-			if (MidiIn.NumberOfDevices > 0)
-			{
-				for (int i = 0; i < MidiIn.NumberOfDevices; i++)
-				{
-					DeviceList.Items.Add(MidiIn.DeviceInfo(i).ProductName);
-				}
-			}
-
-			if(MidiOut.NumberOfDevices > 0)
-			{
-				for(int i = 0; i < MidiOut.NumberOfDevices; i++)
-				{
-					OutputDeviceList.Items.Add(MidiOut.DeviceInfo(i).ProductName);
-				}
-			}
-
 			_trackLeds[0] = ledTrackOne;
 			_trackLeds[1] = ledTrackTwo;
 			_trackLeds[2] = ledTrackThree;
 			_trackLeds[3] = ledTrackFour;
 
+			ScanDevices();
 			Clear();
+		}
+
+		private void SendNotetoPedal(int noteNumber)
+		{
+			if (_toPedal != null)
+			{
+				NoteOnEvent note = new NoteOnEvent(0, 1, noteNumber, 127, 0);
+				_toPedal.Send(note.GetAsShortMessage());
+			}
+		}
+
+		private void ScanDevices()
+		{
+			if (MidiIn.NumberOfDevices > 0)
+			{
+				InputDeviceList.Items.Clear();
+
+				for (int i = 0; i < MidiIn.NumberOfDevices; i++)
+				{
+					InputDeviceList.Items.Add(MidiIn.DeviceInfo(i).ProductName);
+				}
+			}
+
+			if (MidiOut.NumberOfDevices > 0)
+			{
+				OutputDeviceList.Items.Clear();
+
+				for (int i = 0; i < MidiOut.NumberOfDevices; i++)
+				{
+					OutputDeviceList.Items.Add(MidiOut.DeviceInfo(i).ProductName);
+				}
+			}
 		}
 
 		private void UpdateUI()
@@ -136,13 +155,7 @@ namespace wpf_pedal_ui
 			for (int i = 0; i < _trackLeds.Length; i++)
 				_trackLeds[i].Background = (i == index) ? Brushes.Red : Brushes.Transparent;
 
-			//Send midi note
-			if (_toPedal != null)
-			{
-				NoteOnEvent note = new NoteOnEvent(0, 1, _midiNotes[index + 3], 127, 0);
-				_toPedal.Send(note.GetAsShortMessage());
-			}
-
+			SendNotetoPedal(_midiNotes[index + 3]);
 			UpdateUI();
 		}
 
@@ -150,8 +163,8 @@ namespace wpf_pedal_ui
 		{
 			Stop();
 			_state = PedalState.None; //None
-			SelectTrack(0);
 			_mode = PedalMode.Record;
+			SelectTrack(0);
 
 			for (int i = 0; i < _muteTrack.Length; i++)
 			{
@@ -162,20 +175,20 @@ namespace wpf_pedal_ui
 			UpdateUI();
 		}
 
-		private void DeviceList_SelectionChanged(object sender, SelectionChangedEventArgs e)
+		private void InputDeviceList_SelectionChanged(object sender, SelectionChangedEventArgs e)
 		{
-			int _deviceIndex = DeviceList.SelectedIndex;
-			if (_deviceIndex != -1)
+			int deviceIndex = InputDeviceList.SelectedIndex;
+			if (deviceIndex != -1)
 			{
-				if (_fromPedal != null)
+				if(_fromPedal != null)
 				{
 					_fromPedal.Stop();
 					_fromPedal.Dispose();
 				}
 
-				_fromPedal = new MidiIn(_deviceIndex);
+				_fromPedal = new MidiIn(deviceIndex);
 				_fromPedal.MessageReceived += midiIn_MessageReceived;
-				_fromPedal.Start();				
+				_fromPedal.Start();
 			}
 		}
 
@@ -312,11 +325,16 @@ namespace wpf_pedal_ui
 				_fromPedal.MessageReceived -= midiIn_MessageReceived;
 				_fromPedal.Stop();
 				_fromPedal.Dispose();
-
-				_toPedal.Dispose();
 			}
 
+			_toPedal?.Dispose();
+
 			Application.Current.Shutdown();
+		}
+
+		private void BtnScanDevices_Click(object sender, RoutedEventArgs e)
+		{
+			ScanDevices();
 		}
 	}
 }
