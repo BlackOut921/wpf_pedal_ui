@@ -39,10 +39,11 @@
             <Button Background="white" Grid.Row="1" Grid.Column="2" Name="BtnClear" Click="BtnClear_Click">
                 <TextBlock Foreground="black">Clear</TextBlock>
             </Button>
-            <TextBlock Name="txtOutput" Foreground="White" Grid.Row="1" Grid.Column="6" TextAlignment="Center" VerticalAlignment="Center" TextWrapping="Wrap">OUTPUT</TextBlock>
+            <TextBlock Name="txtOutput" Foreground="White" Grid.Row="1" Grid.Column="6" TextAlignment="Center" VerticalAlignment="Center" TextWrapping="Wrap"></TextBlock>
             <ListBox Name="DeviceList" Grid.Column="7" Grid.Row="1" Background="#303030" Foreground="White" SelectionChanged="DeviceList_SelectionChanged"></ListBox>
 
             <!-- row 2 -->
+            <ListBox Name="OutputDeviceList" Grid.Row="2" Grid.Column="7" Background="#303030" Foreground="White" SelectionChanged="OutputDeviceList_SelectionChanged"></ListBox>
 
             <!-- row 3 -->
             <Border Grid.Row="3" Grid.Column="0" Background="Transparent" Name="ledPlayRec"></Border>

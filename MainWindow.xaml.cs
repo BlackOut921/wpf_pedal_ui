@@ -1,5 +1,4 @@
-﻿using System.ComponentModel;
-using System.Windows;
+﻿using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
 
@@ -12,7 +11,7 @@ namespace wpf_pedal_ui
 	/// </summary>
 	public partial class MainWindow : Window
 	{
-		private enum PedalMode { Record, Play };
+		private enum PedalMode { Record, Play, Auto };
 		private enum PedalState { None, Record, Overdub, Play, Stop };
 		private readonly int[] _midiNotes = { 40, 41, 43, 53, 55, 57, 59 };
 
@@ -22,7 +21,8 @@ namespace wpf_pedal_ui
 		private PedalMode _mode = PedalMode.Record;
 		private PedalState _state = PedalState.None;
 
-		private MidiIn? _device = null;
+		private MidiIn? _fromPedal = null;
+		private MidiOut? _toPedal = null;
 
 		public MainWindow()
 		{
@@ -33,6 +33,14 @@ namespace wpf_pedal_ui
 				for (int i = 0; i < MidiIn.NumberOfDevices; i++)
 				{
 					DeviceList.Items.Add(MidiIn.DeviceInfo(i).ProductName);
+				}
+			}
+
+			if(MidiOut.NumberOfDevices > 0)
+			{
+				for(int i = 0; i < MidiOut.NumberOfDevices; i++)
+				{
+					OutputDeviceList.Items.Add(MidiOut.DeviceInfo(i).ProductName);
 				}
 			}
 
@@ -68,10 +76,13 @@ namespace wpf_pedal_ui
 			ledStop.Background = (_state == PedalState.Stop) ? Brushes.Blue : Brushes.Transparent; //stopMode
 		}
 
-		private void ChangeMode()
+		private void ChangeMode(PedalMode newMode = PedalMode.Auto)
 		{
-			_mode = (_mode == PedalMode.Record) ? PedalMode.Play : PedalMode.Record;
-			txtOutput.Text = "Mode = " + ((_mode == PedalMode.Record) ? "recMode" : "playMode");
+			if(newMode == PedalMode.Auto)
+				_mode = (_mode == PedalMode.Record) ? PedalMode.Play : PedalMode.Record;
+			else
+				_mode = newMode;
+
 			UpdateUI();
 		}
 
@@ -81,7 +92,7 @@ namespace wpf_pedal_ui
 				return;
 
 			_state = PedalState.Stop;
-			txtOutput.Text = _state.ToString();
+
 			UpdateUI();
 		}
 
@@ -98,7 +109,6 @@ namespace wpf_pedal_ui
 			else if (_state == PedalState.Stop) //stopMode
 				_state = PedalState.Play; //switch to playMode
 
-			txtOutput.Text = _state.ToString();
 			UpdateUI();
 		}
 
@@ -112,7 +122,6 @@ namespace wpf_pedal_ui
 			_muteTrack[index] = !_muteTrack[index];
 			_trackLeds[index].Background = (_muteTrack[index]) ? Brushes.Transparent : Brushes.Lime;
 
-			txtOutput.Text = "MuteTrack(" + index + ") = " + _muteTrack[index];
 			UpdateUI();
 		}
 
@@ -127,15 +136,22 @@ namespace wpf_pedal_ui
 			for (int i = 0; i < _trackLeds.Length; i++)
 				_trackLeds[i].Background = (i == index) ? Brushes.Red : Brushes.Transparent;
 
-			txtOutput.Text = "SelectTrack(" + index + ")";
+			//Send midi note
+			if (_toPedal != null)
+			{
+				NoteOnEvent note = new NoteOnEvent(0, 1, _midiNotes[index + 3], 127, 0);
+				_toPedal.Send(note.GetAsShortMessage());
+			}
+
 			UpdateUI();
 		}
 
 		private void Clear()
 		{
+			Stop();
 			_state = PedalState.None; //None
-			_mode = PedalMode.Record; //recMode
 			SelectTrack(0);
+			_mode = PedalMode.Record;
 
 			for (int i = 0; i < _muteTrack.Length; i++)
 			{
@@ -143,28 +159,36 @@ namespace wpf_pedal_ui
 					_muteTrack[i] = false; //UNMUTE
 			}
 
-			txtOutput.Text = "CLEAR";
 			UpdateUI();
 		}
 
 		private void DeviceList_SelectionChanged(object sender, SelectionChangedEventArgs e)
 		{
 			int _deviceIndex = DeviceList.SelectedIndex;
-
 			if (_deviceIndex != -1)
 			{
-				if (_device != null)
+				if (_fromPedal != null)
 				{
-					_device.Stop();
-					_device.Dispose();
+					_fromPedal.Stop();
+					_fromPedal.Dispose();
 				}
 
-				_device = new MidiIn(_deviceIndex);
-				_device.MessageReceived += midiIn_MessageReceived;
-				_device.Start();
+				_fromPedal = new MidiIn(_deviceIndex);
+				_fromPedal.MessageReceived += midiIn_MessageReceived;
+				_fromPedal.Start();				
 			}
+		}
 
-			txtOutput.Text = "Selected device" + _deviceIndex.ToString();
+		private void OutputDeviceList_SelectionChanged(object sender, SelectionChangedEventArgs e)
+		{
+			int deviceIndex = OutputDeviceList.SelectedIndex;
+			if(deviceIndex != -1)
+			{
+				if (_toPedal != null)
+					_toPedal.Dispose();
+
+				_toPedal = new MidiOut(deviceIndex);
+			}
 		}
 
 		private void BtnPlayRec_Click(object sender, RoutedEventArgs e)
@@ -243,7 +267,6 @@ namespace wpf_pedal_ui
 
 				if (_note.CommandCode == MidiCommandCode.NoteOn)
 				{
-					//Notes from pico pedal
 					//_midiNotes = [40, 41, 43, 53, 55, 57, 59]
 					/* _midiNotes[0] = CLEAR(E1)
 					 * _midiNotes[1] = REC/PLAY(F1)
@@ -255,21 +278,24 @@ namespace wpf_pedal_ui
 
 					if (_note.NoteNumber == _midiNotes[0]) Clear(); //Clear
 					if (_note.NoteNumber == _midiNotes[1]) ChangeState(); //Record/Overdub/Play
-					if (_note.NoteNumber == _midiNotes[2]) { Stop(); } //Stop all
-					if (_note.NoteNumber == 45) { ChangeMode(); } //RecMode/PlayMode
+					if (_note.NoteNumber == _midiNotes[2]) Stop(); //Stop all
+					if (_note.NoteNumber == _midiNotes[0] - 2) ChangeMode(); //RecMode/PlayMode
 
 					//Track 1
-					if (_note.NoteNumber == _midiNotes[3]) SelectTrack(0); //Select track 1
-					if (_note.NoteNumber == _midiNotes[3] + 12) { ToggleMuteTrack(0); } //Toggle mute track 1
+					if (_note.NoteNumber == _midiNotes[3]) SelectTrack(0);
+					if (_note.NoteNumber == _midiNotes[3] + 12) ToggleMuteTrack(0);
 
-					if (_note.NoteNumber == _midiNotes[4]) SelectTrack(1); //Select track 2
-					if (_note.NoteNumber == _midiNotes[4] + 12) { ToggleMuteTrack(1); } //Toggle mute track 2
+					//Track 2
+					if (_note.NoteNumber == _midiNotes[4]) SelectTrack(1);
+					if (_note.NoteNumber == _midiNotes[4] + 12) ToggleMuteTrack(1);
 
-					if (_note.NoteNumber == _midiNotes[5]) SelectTrack(2); //Select track 3
-					if (_note.NoteNumber == _midiNotes[5] + 12) { ToggleMuteTrack(2); } //Toggle mute track 3
+					//Track 3
+					if (_note.NoteNumber == _midiNotes[5]) SelectTrack(2);
+					if (_note.NoteNumber == _midiNotes[5] + 12) ToggleMuteTrack(2);
 
-					if (_note.NoteNumber == _midiNotes[6]) SelectTrack(3); //Select track 4								
-					if (_note.NoteNumber == _midiNotes[6] + 12) { ToggleMuteTrack(3); }  //Toggle mute track 4
+					//Track 4
+					if (_note.NoteNumber == _midiNotes[6]) SelectTrack(3);						
+					if (_note.NoteNumber == _midiNotes[6] + 12) ToggleMuteTrack(3);
 				}
 			});
 		}
@@ -281,21 +307,16 @@ namespace wpf_pedal_ui
 
 		private void BtnClose_Click(object sender, RoutedEventArgs e)
 		{
-			if(_device != null)
+			if (_fromPedal != null)
 			{
-				_device.MessageReceived -= midiIn_MessageReceived;
-				_device.Stop();
-				_device.Dispose();
+				_fromPedal.MessageReceived -= midiIn_MessageReceived;
+				_fromPedal.Stop();
+				_fromPedal.Dispose();
+
+				_toPedal.Dispose();
 			}
-			
+
 			Application.Current.Shutdown();
-		}
-
-		protected override void OnClosing(CancelEventArgs e)
-		{
-			base.OnClosing(e);
-
-			//
 		}
 	}
 }
