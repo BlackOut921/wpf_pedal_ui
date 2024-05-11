@@ -64,7 +64,7 @@
         <Button Background="Orange" Grid.Row="4" Grid.Column="4" Name="BtnTrackOne" Click="BtnTrackOne_Click">
             <TextBlock Foreground="White">1</TextBlock>
         </Button>
-        <Button Background="Orange" Grid.Row="4" Grid.Column="5" Name="BtnTTrackTwo" Click="BtnTTrackTwo_Click">
+        <Button Background="Orange" Grid.Row="4" Grid.Column="5" Name="BtnTrackTwo" Click="BtnTrackTwo_Click">
             <TextBlock Foreground="White">2</TextBlock>
         </Button>
         <Button Background="Orange" Grid.Row="4" Grid.Column="6" Name="BtnTrackThree" Click="BtnTrackThree_Click">

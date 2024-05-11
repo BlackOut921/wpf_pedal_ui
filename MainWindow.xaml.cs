@@ -45,6 +45,7 @@ namespace wpf_pedal_ui
 
 		private void SendNotetoPedal(int noteNumber)
 		{
+			_midiMode = MidiMode.Send;
 			NoteOnEvent note = new NoteOnEvent(0, 1, noteNumber, 127, 0);
 
 			if (_toPedal != null)
@@ -163,8 +164,8 @@ namespace wpf_pedal_ui
 			for (int i = 0; i < _trackLeds.Length; i++)
 				_trackLeds[i].Background = (i == index) ? Brushes.Red : Brushes.Transparent;
 
-			if(_midiMode == MidiMode.Send)
-				SendNotetoPedal(_midiNotes[index + 3]);
+			/*if(_midiMode == MidiMode.Send)
+				SendNotetoPedal(_midiNotes[index + 3]);*/
 
 			UpdateUI();
 		}
@@ -233,73 +234,81 @@ namespace wpf_pedal_ui
 		private void BtnPlayRec_Click(object sender, RoutedEventArgs e)
 		{
 			ChangeState();
+			SendNotetoPedal(_midiNotes[1]);
 		}
 
 		private void BtnStop_Click(object sender, RoutedEventArgs e)
 		{
 			Stop();
+			SendNotetoPedal(_midiNotes[2]);
 		}
 
 		private void BtnMode_Click(object sender, RoutedEventArgs e)
 		{
 			ChangeMode();
+			SendNotetoPedal(_midiNotes[0] - 2);
 		}
 
 		private void BtnClear_Click(object sender, RoutedEventArgs e)
 		{
 			Clear();
+			SendNotetoPedal(_midiNotes[0]);
 		}
 
 		private void BtnTrackOne_Click(object sender, RoutedEventArgs e)
 		{
-			_midiMode = MidiMode.Send;
 			if (_mode == PedalMode.Record)
 			{
 				SelectTrack(0);
+				SendNotetoPedal(_midiNotes[3]);
 			}
 			else
 			{
 				ToggleMuteTrack(0);
+				SendNotetoPedal(_midiNotes[3] + 12);
 			}
 		}
 
-		private void BtnTTrackTwo_Click(object sender, RoutedEventArgs e)
+		private void BtnTrackTwo_Click(object sender, RoutedEventArgs e)
 		{
-			_midiMode = MidiMode.Send;
 			if (_mode == PedalMode.Record)
 			{
 				SelectTrack(1);
+				SendNotetoPedal(_midiNotes[4]);
 			}
 			else
 			{
 				ToggleMuteTrack(1);
+				SendNotetoPedal(_midiNotes[4] + 12);
 			}
 		}
 
 		private void BtnTrackThree_Click(object sender, RoutedEventArgs e)
 		{
-			_midiMode = MidiMode.Send;
 			if (_mode == PedalMode.Record)
 			{
 				SelectTrack(2);
+				SendNotetoPedal(_midiNotes[5]);
 			}
 			else
 			{
 				ToggleMuteTrack(2);
-			}
+				SendNotetoPedal(_midiNotes[5] + 12);
+			}		
 		}
 
 		private void BtnTrackFour_Click(object sender, RoutedEventArgs e)
 		{
-			_midiMode = MidiMode.Send;
 			if (_mode == PedalMode.Record)
 			{
 				SelectTrack(3);
+				SendNotetoPedal(_midiNotes[6]);
 			}
 			else
 			{
 				ToggleMuteTrack(3);
-			}
+				SendNotetoPedal(_midiNotes[6] + 12);
+			}	
 		}
 
 		private void BtnScanDevices_Click(object sender, RoutedEventArgs e)
@@ -332,8 +341,8 @@ namespace wpf_pedal_ui
 				if (_toPedal != null)
 					_toPedal.Dispose();
 
-				_softwareOut?.Dispose();
-				_softwareOut = new MidiOut(0);
+				//_softwareOut?.Dispose();
+				//_softwareOut = new MidiOut(0);
 
 				_toPedal = new MidiOut(deviceIndex);
 			}
