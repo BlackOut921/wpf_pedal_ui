@@ -102,8 +102,6 @@ namespace wpf_pedal_ui
 			if (_state == PedalState.Overdub) ledPlayRec.Background = _orange; //overMode
 			if (_state == PedalState.Play) ledPlayRec.Background = _green; //playMode
 			ledStop.Background = (_state == PedalState.Stop) ? _blue : Brushes.Transparent; //stopMode
-
-			txtOutput.Text = _state.ToString() + " - " + _mode.ToString();
 		}
 
 		private void ChangeMode(PedalMode newMode = PedalMode.Auto)
@@ -195,6 +193,8 @@ namespace wpf_pedal_ui
 					 * _midiNotes[4] = TRACK 2(0)/UNDO(+1)/MUTE(+12)/PLAY(+24)/OVERDUB(+25)
 					 * _midiNotes[5] = TRACK 3(0)/UNDO(+1)/MUTE(+12)/PLAY(+24)/OVERDUB(+25)
 					 * _midiNotes[6] = TRACK 4(0)/UNDO(+1)/MUTE(+12)/PLAY(+24)/OVERDUB(+25)*/
+
+					//NEED TIMER ON REC/PLAY BTN!!!
 
 					if (_note.NoteNumber == _midiNotes[0]) Clear(); //Clear
 					if (_note.NoteNumber == _midiNotes[1]) ChangeState(); //Record/Overdub/Play
