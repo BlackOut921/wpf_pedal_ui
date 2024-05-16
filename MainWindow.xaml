@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:wpf_pedal_ui"
         mc:Ignorable="d" 
-        Title="MainWindow" Height="450" Width="800" 
+        Title="MainWindow" Height="500" Width="800" 
         WindowStartupLocation="CenterScreen" 
         Background="#282828">
     <Grid Margin="15">
@@ -35,9 +35,9 @@
 
         <!-- row 1 -->
         <Button Background="white" Grid.Row="1" Grid.Column="2" Name="BtnClear" Click="BtnClear_Click">
-            <TextBlock Foreground="black">Clear</TextBlock>
+            <TextBlock Foreground="black">CLEAR</TextBlock>
         </Button>
-        <TextBlock Name="txtOutput" Foreground="White" Grid.Row="1" Grid.Column="4" TextAlignment="Center" VerticalAlignment="Center" TextWrapping="Wrap"></TextBlock>
+        <TextBlock Name="txtOutput" Foreground="White" Grid.Row="1" Grid.Column="5" TextAlignment="Center" VerticalAlignment="Center" TextWrapping="Wrap">-</TextBlock>
         <ListBox Name="InputDeviceList" Grid.Row="1" Grid.Column="6" Background="#303030" Foreground="White" SelectionChanged="InputDeviceList_SelectionChanged"></ListBox>
         <ListBox Name="OutputDeviceList" Grid.Row="1" Grid.Column="7" Background="#303030" Foreground="White" SelectionChanged="OutputDeviceList_SelectionChanged"></ListBox>
 
@@ -53,24 +53,24 @@
 
         <!-- row 4 -->
         <Button Background="Red" Grid.Row="4" Grid.Column="0" Name="BtnPlayRec" Click="BtnPlayRec_Click">
-            <TextBlock Foreground="White">Play/Rec</TextBlock>
+            <TextBlock Foreground="White">REC/PLAY</TextBlock>
         </Button>
         <Button Background="Red" Grid.Row="4" Grid.Column="1" Name="BtnStop" Click="BtnStop_Click">
-            <TextBlock Foreground="White">Stop</TextBlock>
+            <TextBlock Foreground="White">STOP</TextBlock>
         </Button>
         <Button Background="Red" Grid.Row="4" Grid.Column="2" Name="BtnMode" Click="BtnMode_Click">
-            <TextBlock Foreground="White">Mode</TextBlock>
+            <TextBlock Foreground="White">MODE</TextBlock>
         </Button>
-        <Button Background="Orange" Grid.Row="4" Grid.Column="4" Name="BtnTrackOne" Click="BtnTrackOne_Click">
+        <Button Background="Orange" Grid.Row="4" Grid.Column="4" Name="BtnTrackOne" PreviewMouseLeftButtonDown="BtnTrackOne_PreviewMouseLeftButtonDown" PreviewMouseLeftButtonUp="BtnTrackOne_PreviewMouseLeftButtonUp">
             <TextBlock Foreground="White">1</TextBlock>
         </Button>
-        <Button Background="Orange" Grid.Row="4" Grid.Column="5" Name="BtnTrackTwo" Click="BtnTrackTwo_Click">
+        <Button Background="Orange" Grid.Row="4" Grid.Column="5" Name="BtnTrackTwo" PreviewMouseLeftButtonDown="BtnTrackTwo_PreviewMouseLeftButtonDown" PreviewMouseLeftButtonUp="BtnTrackTwo_PreviewMouseLeftButtonUp">
             <TextBlock Foreground="White">2</TextBlock>
         </Button>
-        <Button Background="Orange" Grid.Row="4" Grid.Column="6" Name="BtnTrackThree" Click="BtnTrackThree_Click">
+        <Button Background="Orange" Grid.Row="4" Grid.Column="6" Name="BtnTrackThree" PreviewMouseLeftButtonDown="BtnTrackThree_PreviewMouseLeftButtonDown" PreviewMouseLeftButtonUp="BtnTrackThree_PreviewMouseLeftButtonUp">
             <TextBlock Foreground="White">3</TextBlock>
         </Button>
-        <Button Background="Orange" Grid.Row="4" Grid.Column="7" Name="BtnTrackFour" Click="BtnTrackFour_Click">
+        <Button Background="Orange" Grid.Row="4" Grid.Column="7" Name="BtnTrackFour" PreviewMouseLeftButtonDown="BtnTrackFour_PreviewMouseLeftButtonDown" PreviewMouseLeftButtonUp="BtnTrackFour_PreviewMouseLeftButtonUp">
             <TextBlock Foreground="White">4</TextBlock>
         </Button>
     </Grid>
