@@ -8,8 +8,9 @@
         Title="MainWindow" Height="500" Width="800" 
         WindowStartupLocation="CenterScreen" 
         Background="#282828">
-    <Grid Margin="15">
+    <Grid Margin="10">
         <Grid.RowDefinitions>
+            <RowDefinition Height="20"></RowDefinition>
             <RowDefinition Height="20"></RowDefinition>
             <RowDefinition></RowDefinition>
             <RowDefinition></RowDefinition>
@@ -29,48 +30,48 @@
         </Grid.ColumnDefinitions>
 
         <!-- row 0 -->
-        <Button Grid.Row="0" Grid.Column="5" Name="BtnScanDevices" Click="BtnScanDevices_Click">Scan devices</Button>
-        <TextBlock Grid.Row="0" Grid.Column="6" Foreground="White" HorizontalAlignment="Center">Input</TextBlock>
-        <TextBlock Grid.Row="0" Grid.Column="7" Foreground="White" HorizontalAlignment="Center">Ouput</TextBlock>
+        <Button Grid.Row="0" Grid.Column="7" Name="BtnScanDevices" Click="BtnScanDevices_Click">Scan devices</Button>
+        <TextBlock Grid.Row="1" Grid.Column="6" Foreground="White" HorizontalAlignment="Center">Input From</TextBlock>
+        <TextBlock Grid.Row="1" Grid.Column="7" Foreground="White" HorizontalAlignment="Center">Ouput To</TextBlock>
 
         <!-- row 1 -->
-        <Button Background="white" Grid.Row="1" Grid.Column="2" Name="BtnClear" Click="BtnClear_Click">
+        <Button Background="white" Grid.Row="2" Grid.Column="2" Name="BtnClear" Click="BtnClear_Click">
             <TextBlock Foreground="black">CLEAR</TextBlock>
         </Button>
-        <TextBlock Name="txtOutput" Foreground="White" Grid.Row="1" Grid.Column="5" TextAlignment="Center" VerticalAlignment="Center" TextWrapping="Wrap">-</TextBlock>
-        <ListBox Name="InputDeviceList" Grid.Row="1" Grid.Column="6" Background="#303030" Foreground="White" SelectionChanged="InputDeviceList_SelectionChanged"></ListBox>
-        <ListBox Name="OutputDeviceList" Grid.Row="1" Grid.Column="7" Background="#303030" Foreground="White" SelectionChanged="OutputDeviceList_SelectionChanged"></ListBox>
+        <TextBlock Name="txtOutput" Foreground="White" Grid.Row="2" Grid.Column="5" TextAlignment="Center" VerticalAlignment="Center" TextWrapping="Wrap">-</TextBlock>
+        <ListBox Name="InputDeviceList" Grid.Row="2" Grid.Column="6" Background="#303030" Foreground="White" SelectionChanged="InputDeviceList_SelectionChanged"></ListBox>
+        <ListBox Name="OutputDeviceList" Grid.Row="2" Grid.Column="7" Background="#303030" Foreground="White" SelectionChanged="OutputDeviceList_SelectionChanged"/>
 
         <!-- row 2 -->
 
         <!-- row 3 -->
-        <Border Grid.Row="3" Grid.Column="0" Background="Transparent" Name="ledPlayRec"></Border>
-        <Border Grid.Row="3" Grid.Column="1" Background="Transparent" Name="ledStop"></Border>
-        <Border Grid.Row="3" Grid.Column="4" Background="Red" Name="ledTrackOne"></Border>
-        <Border Grid.Row="3" Grid.Column="5" Background="Transparent" Name="ledTrackTwo"></Border>
-        <Border Grid.Row="3" Grid.Column="6" Background="Transparent" Name="ledTrackThree"></Border>
-        <Border Grid.Row="3" Grid.Column="7" Background="Transparent" Name="ledTrackFour"></Border>
+        <Border Grid.Row="4" Grid.Column="0" Background="Transparent" Name="ledPlayRec"></Border>
+        <Border Grid.Row="4" Grid.Column="1" Background="Transparent" Name="ledStop"></Border>
+        <Border Grid.Row="4" Grid.Column="4" Background="Red" Name="ledTrackOne"></Border>
+        <Border Grid.Row="4" Grid.Column="5" Background="Transparent" Name="ledTrackTwo"></Border>
+        <Border Grid.Row="4" Grid.Column="6" Background="Transparent" Name="ledTrackThree"></Border>
+        <Border Grid.Row="4" Grid.Column="7" Background="Transparent" Name="ledTrackFour"></Border>
 
         <!-- row 4 -->
-        <Button Background="Red" Grid.Row="4" Grid.Column="0" Name="BtnPlayRec" Click="BtnPlayRec_Click">
+        <Button Background="Red" Grid.Row="5" Grid.Column="0" Name="BtnPlayRec" Click="BtnPlayRec_Click">
             <TextBlock Foreground="White">REC/PLAY</TextBlock>
         </Button>
-        <Button Background="Red" Grid.Row="4" Grid.Column="1" Name="BtnStop" Click="BtnStop_Click">
+        <Button Background="Red" Grid.Row="5" Grid.Column="1" Name="BtnStop" Click="BtnStop_Click">
             <TextBlock Foreground="White">STOP</TextBlock>
         </Button>
-        <Button Background="Red" Grid.Row="4" Grid.Column="2" Name="BtnMode" Click="BtnMode_Click">
+        <Button Background="Red" Grid.Row="5" Grid.Column="2" Name="BtnMode" Click="BtnMode_Click">
             <TextBlock Foreground="White">MODE</TextBlock>
         </Button>
-        <Button Background="Orange" Grid.Row="4" Grid.Column="4" Name="BtnTrackOne" PreviewMouseLeftButtonDown="BtnTrackOne_PreviewMouseLeftButtonDown" PreviewMouseLeftButtonUp="BtnTrackOne_PreviewMouseLeftButtonUp">
+        <Button Background="Orange" Grid.Row="5" Grid.Column="4" Name="BtnTrackOne" PreviewMouseLeftButtonDown="BtnTrackOne_PreviewMouseLeftButtonDown" PreviewMouseLeftButtonUp="BtnTrackOne_PreviewMouseLeftButtonUp">
             <TextBlock Foreground="White">1</TextBlock>
         </Button>
-        <Button Background="Orange" Grid.Row="4" Grid.Column="5" Name="BtnTrackTwo" PreviewMouseLeftButtonDown="BtnTrackTwo_PreviewMouseLeftButtonDown" PreviewMouseLeftButtonUp="BtnTrackTwo_PreviewMouseLeftButtonUp">
+        <Button Background="Orange" Grid.Row="5" Grid.Column="5" Name="BtnTrackTwo" PreviewMouseLeftButtonDown="BtnTrackTwo_PreviewMouseLeftButtonDown" PreviewMouseLeftButtonUp="BtnTrackTwo_PreviewMouseLeftButtonUp">
             <TextBlock Foreground="White">2</TextBlock>
         </Button>
-        <Button Background="Orange" Grid.Row="4" Grid.Column="6" Name="BtnTrackThree" PreviewMouseLeftButtonDown="BtnTrackThree_PreviewMouseLeftButtonDown" PreviewMouseLeftButtonUp="BtnTrackThree_PreviewMouseLeftButtonUp">
+        <Button Background="Orange" Grid.Row="5" Grid.Column="6" Name="BtnTrackThree" PreviewMouseLeftButtonDown="BtnTrackThree_PreviewMouseLeftButtonDown" PreviewMouseLeftButtonUp="BtnTrackThree_PreviewMouseLeftButtonUp">
             <TextBlock Foreground="White">3</TextBlock>
         </Button>
-        <Button Background="Orange" Grid.Row="4" Grid.Column="7" Name="BtnTrackFour" PreviewMouseLeftButtonDown="BtnTrackFour_PreviewMouseLeftButtonDown" PreviewMouseLeftButtonUp="BtnTrackFour_PreviewMouseLeftButtonUp">
+        <Button Background="Orange" Grid.Row="5" Grid.Column="7" Name="BtnTrackFour" PreviewMouseLeftButtonDown="BtnTrackFour_PreviewMouseLeftButtonDown" PreviewMouseLeftButtonUp="BtnTrackFour_PreviewMouseLeftButtonUp">
             <TextBlock Foreground="White">4</TextBlock>
         </Button>
     </Grid>

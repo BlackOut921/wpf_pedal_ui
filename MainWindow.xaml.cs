@@ -1,7 +1,5 @@
-﻿using System;
-using System.ComponentModel;
+﻿using System.ComponentModel;
 using System.Diagnostics;
-using System.Runtime.CompilerServices;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
@@ -25,34 +23,55 @@ namespace wpf_pedal_ui
 		private PedalState _state = PedalState.None;
 
 		private MidiIn? _inputDevice = null;
-		private MidiOut? _toPedal = null;
+		private MidiOut? _outputPedal = null;
 
 		private Brush _red = Brushes.Red;
 		private Brush _orange = Brushes.Orange;
 		private Brush _green = Brushes.Lime;
 		private Brush _blue = Brushes.Blue;
 
+		private Stopwatch _stopWatch = new Stopwatch();
+
 		public MainWindow()
 		{
 			InitializeComponent();
-
-			ScanForDevices();
 			Clear();
 			txtOutput.Text = string.Empty;
 		}
 
 		private void SendNotetoPedal(int noteNumber)
 		{
-			NoteOnEvent note = new NoteOnEvent(0, 1, noteNumber, 127, 0);
+			if (_outputPedal != null)
+			{
+				NoteOnEvent note = new NoteOnEvent(0, 1, noteNumber, 127, 0);
+				_outputPedal.Send(note.GetAsShortMessage());
+			}
+		}
 
-			if (_toPedal != null)
-				_toPedal.Send(note.GetAsShortMessage());
+		private void ReleaseDevices()
+		{
+			try
+			{
+				if (_inputDevice != null)
+				{
+					_inputDevice.MessageReceived -= midiIn_MessageReceived;
+					_inputDevice.Stop();
+					_inputDevice.Dispose();
+				}
+
+				_outputPedal?.Dispose();
+			}
+			catch(Exception e)
+			{
+				txtOutput.Text = e.Message;
+			}
 		}
 
 		private void ScanForDevices()
 		{
-			InputDeviceList.Items.Clear();
+			ReleaseDevices();
 
+			InputDeviceList.Items.Clear();
 			if (MidiIn.NumberOfDevices > 0)
 			{
 				for (int i = 0; i < MidiIn.NumberOfDevices; i++)
@@ -62,7 +81,6 @@ namespace wpf_pedal_ui
 			}
 
 			OutputDeviceList.Items.Clear();
-
 			if (MidiOut.NumberOfDevices > 0)
 			{
 				for (int i = 0; i < MidiOut.NumberOfDevices; i++)
@@ -166,6 +184,7 @@ namespace wpf_pedal_ui
 			_state = PedalState.Clear;
 
 			Stop();
+			SendNotetoPedal(_midiNotes[0]);
 			SelectTrack(0);
 			ChangeMode(PedalMode.Record);
 
@@ -193,8 +212,6 @@ namespace wpf_pedal_ui
 					 * _midiNotes[4] = TRACK 2(0)/UNDO(+1)/MUTE(+12)/PLAY(+24)/OVERDUB(+25)
 					 * _midiNotes[5] = TRACK 3(0)/UNDO(+1)/MUTE(+12)/PLAY(+24)/OVERDUB(+25)
 					 * _midiNotes[6] = TRACK 4(0)/UNDO(+1)/MUTE(+12)/PLAY(+24)/OVERDUB(+25)*/
-
-					//NEED TIMER ON REC/PLAY BTN!!!
 
 					if (_note.NoteNumber == _midiNotes[0]) Clear(); //Clear
 					if (_note.NoteNumber == _midiNotes[1]) ChangeState(); //Record/Overdub/Play
@@ -225,11 +242,7 @@ namespace wpf_pedal_ui
 			int deviceIndex = InputDeviceList.SelectedIndex;
 			if (deviceIndex != -1)
 			{
-				if (_inputDevice != null)
-				{
-					_inputDevice.Stop();
-					_inputDevice.Dispose();
-				}
+				ReleaseDevices();
 
 				_inputDevice = new MidiIn(deviceIndex);
 				_inputDevice.MessageReceived += midiIn_MessageReceived;
@@ -242,25 +255,15 @@ namespace wpf_pedal_ui
 			int deviceIndex = OutputDeviceList.SelectedIndex;
 			if (deviceIndex != -1)
 			{
-				if (_toPedal != null)
-					_toPedal.Dispose();
-
-				if(deviceIndex != 0)
-					_toPedal = new MidiOut(deviceIndex);
+				ReleaseDevices();
+				_outputPedal = new MidiOut(deviceIndex);
 			}
 		}
 
 		protected override void OnClosing(CancelEventArgs e)
 		{
 			base.OnClosing(e);
-
-			if(_inputDevice != null)
-			{
-				_inputDevice.Stop();
-				_inputDevice.Dispose();
-			}
-
-			_toPedal?.Dispose();
+			ReleaseDevices();
 		}
 
 		private void BtnScanDevices_Click(object sender, RoutedEventArgs e)
@@ -268,12 +271,35 @@ namespace wpf_pedal_ui
 			ScanForDevices();
 		}
 
+		private void BtnClear_Click(object sender, RoutedEventArgs e)
+		{
+			Clear();
+			SendNotetoPedal(_midiNotes[0]);
+			ChangeMode(PedalMode.Record);
+		}
+
 		private void BtnPlayRec_Click(object sender, RoutedEventArgs e)
 		{
-			//THIS NEEDS A SLOW DOWN TIMER!!!
+			if (!_stopWatch.IsRunning)
+			{
+				ChangeState();
+				SendNotetoPedal(_midiNotes[1]);
 
-			ChangeState();
-			SendNotetoPedal(_midiNotes[1]);
+				_stopWatch.Start();
+			}
+			else
+			{ 
+				if(_stopWatch.Elapsed.Seconds >= 0.5)
+				{
+					_stopWatch.Stop();
+					_stopWatch.Reset();
+
+					ChangeState();
+					SendNotetoPedal(_midiNotes[1]);
+
+					_stopWatch.Start();
+				}
+			}
 		}
 
 		private void BtnStop_Click(object sender, RoutedEventArgs e)
@@ -286,13 +312,6 @@ namespace wpf_pedal_ui
 		{
 			ChangeMode();
 			SendNotetoPedal(_midiNotes[0] - 2);
-		}
-
-		private void BtnClear_Click(object sender, RoutedEventArgs e)
-		{
-			Clear();
-			SendNotetoPedal(_midiNotes[0]);
-			ChangeMode(PedalMode.Record);
 		}
 
 		private void BtnTrackOne_PreviewMouseLeftButtonDown(object sender, System.Windows.Input.MouseButtonEventArgs e)
