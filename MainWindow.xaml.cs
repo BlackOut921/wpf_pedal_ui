@@ -25,10 +25,10 @@ namespace wpf_pedal_ui
 		private MidiIn? _inputDevice = null;
 		private MidiOut? _outputPedal = null;
 
-		private Brush _red = Brushes.Red;
-		private Brush _orange = Brushes.Orange;
-		private Brush _green = Brushes.Lime;
-		private Brush _blue = Brushes.Blue;
+		private readonly Brush _red = Brushes.Red;
+		private readonly Brush _orange = Brushes.Orange;
+		private readonly Brush _green = Brushes.Lime;
+		private readonly Brush _blue = Brushes.Blue;
 
 		private Stopwatch _stopWatch = new Stopwatch();
 
@@ -54,7 +54,7 @@ namespace wpf_pedal_ui
 			{
 				if (_inputDevice != null)
 				{
-					_inputDevice.MessageReceived -= midiIn_MessageReceived;
+					_inputDevice.MessageReceived -= MidiIn_MessageReceived;
 					_inputDevice.Stop();
 					_inputDevice.Dispose();
 				}
@@ -198,7 +198,7 @@ namespace wpf_pedal_ui
 			UpdateUI();
 		}
 
-		private void midiIn_MessageReceived(object sender, MidiInMessageEventArgs e)
+		private void MidiIn_MessageReceived(object? sender, MidiInMessageEventArgs e)
 		{
 			this.Dispatcher.Invoke(() => {
 				NoteEvent _note = (NoteEvent)e.MidiEvent;
@@ -213,10 +213,10 @@ namespace wpf_pedal_ui
 					 * _midiNotes[5] = TRACK 3(0)/UNDO(+1)/MUTE(+12)/PLAY(+24)/OVERDUB(+25)
 					 * _midiNotes[6] = TRACK 4(0)/UNDO(+1)/MUTE(+12)/PLAY(+24)/OVERDUB(+25)*/
 
-					if (_note.NoteNumber == _midiNotes[0]) Clear(); //Clear
-					if (_note.NoteNumber == _midiNotes[1]) ChangeState(); //Record/Overdub/Play
-					if (_note.NoteNumber == _midiNotes[2]) Stop(); //Stop all
-					if (_note.NoteNumber == _midiNotes[0] - 2) ChangeMode(); //RecMode/PlayMode
+					if (_note.NoteNumber == _midiNotes[0]) txtOutput.Text = "CLEAR"; //Clear
+					if (_note.NoteNumber == _midiNotes[1]) txtOutput.Text = "STATE"; //Record/Overdub/Play
+					if (_note.NoteNumber == _midiNotes[2]) txtOutput.Text = "STOP"; //Stop all
+					if (_note.NoteNumber == _midiNotes[0] - 2) txtOutput.Text = "MODE"; //RecMode/PlayMode
 
 					//Track 1
 					if (_note.NoteNumber == _midiNotes[3]) SelectTrack(0);
@@ -245,7 +245,7 @@ namespace wpf_pedal_ui
 				ReleaseDevices();
 
 				_inputDevice = new MidiIn(deviceIndex);
-				_inputDevice.MessageReceived += midiIn_MessageReceived;
+				_inputDevice.MessageReceived += MidiIn_MessageReceived;
 				_inputDevice.Start();
 			}
 		}
