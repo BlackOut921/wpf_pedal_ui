@@ -31,13 +31,10 @@ namespace wpf_pedal_ui
 		private readonly Brush _green = Brushes.Lime;
 		private readonly Brush _blue = Brushes.Blue;
 
-		private Stopwatch _stopWatch = new();
-		private DispatcherTimer _timer = new();
-
+		private Stopwatch _stopWatch = new(); //Slows Rec/Play pedal presses
 		private Stopwatch _loopStopWatch = new();
 		private DispatcherTimer _loopTimer = new();
 		private double _loopLength = 0.0;
-		private double _loopCurrentTime = 0.0;
 
 		public MainWindow()
 		{
@@ -196,7 +193,6 @@ namespace wpf_pedal_ui
 
 			_state = PedalState.Stop;
 			_loopTimer.Stop();
-			guiProgress.Value = 0;
 
 			UpdateUI();
 		}
@@ -231,6 +227,7 @@ namespace wpf_pedal_ui
 
 				case PedalState.Stop:
 					_state = PedalState.Play;
+					guiProgress.Value = 0;
 					_loopTimer.Start();
 					break;
 			}
@@ -293,8 +290,8 @@ namespace wpf_pedal_ui
 					 * _midiNotes[5] = TRACK 3(0)/UNDO(+1)/MUTE(+12)/PLAY(+24)/OVERDUB(+25)
 					 * _midiNotes[6] = TRACK 4(0)/UNDO(+1)/MUTE(+12)/PLAY(+24)/OVERDUB(+25)*/
 
-					if (_note.NoteNumber == _midiNotes[0]) txtOutput.Text = "CLEAR"; //Clear
-					if (_note.NoteNumber == _midiNotes[1]) txtOutput.Text = "STATE"; //Record/Overdub/Play
+					if (_note.NoteNumber == _midiNotes[0]) Clear(); //Clear
+					if (_note.NoteNumber == _midiNotes[1]) ChangeState(); //Record/Overdub/Play
 					if (_note.NoteNumber == _midiNotes[2]) Stop(); //Stop all
 					if (_note.NoteNumber == _midiNotes[0] - 2) ChangeMode(); //RecMode/PlayMode
 
