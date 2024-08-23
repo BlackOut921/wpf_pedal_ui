@@ -3,6 +3,7 @@ using System.Diagnostics;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
+using System.Windows.Threading;
 
 using NAudio.Midi;
 
@@ -15,9 +16,9 @@ namespace wpf_pedal_ui
 	{
 		private enum PedalMode { Record, Play, Auto };
 		private enum PedalState { None, Record, Overdub, Play, Stop, Clear };
-		private readonly int[] _midiNotes = { 40, 41, 43, 53, 55, 57, 59 };
+		private readonly int[] _midiNotes = [ 40, 41, 43, 53, 55, 57, 59 ];
 
-		private bool[] _muteTrack = new bool[4];
+		private bool[] _muteTrack = [false, false, false, false];
 		private int _selectedTrack = 0; //0, 1; 2; 3;
 		private PedalMode _mode = PedalMode.Record;
 		private PedalState _state = PedalState.None;
@@ -30,22 +31,47 @@ namespace wpf_pedal_ui
 		private readonly Brush _green = Brushes.Lime;
 		private readonly Brush _blue = Brushes.Blue;
 
-		private Stopwatch _stopWatch = new Stopwatch();
+		private Stopwatch _stopWatch = new();
+		private DispatcherTimer _timer = new();
+
+		private Stopwatch _loopStopWatch = new();
+		private DispatcherTimer _loopTimer = new();
+		private double _loopLength = 0.0;
+		private double _loopCurrentTime = 0.0;
 
 		public MainWindow()
 		{
 			InitializeComponent();
 			Clear();
 			txtOutput.Text = string.Empty;
+			_loopTimer.Tick += _loopTimer_Tick;
+		}
+
+		private void _loopTimer_Tick(object? sender, EventArgs e)
+		{
+			double i = _loopLength;
+			guiProgress.Value += i;
+
+			if(guiProgress.Value >= guiProgress.Maximum)
+			{
+				guiProgress.Value = 0;
+			}
 		}
 
 		private void SendNotetoPedal(int noteNumber)
 		{
 			if (_outputPedal != null)
 			{
-				NoteOnEvent note = new NoteOnEvent(0, 1, noteNumber, 127, 0);
+				NoteOnEvent note = new(0, 1, noteNumber, 127, 0);
 				_outputPedal.Send(note.GetAsShortMessage());
 			}
+		}
+
+		private void UndoTrack(int i)
+		{
+			_stopWatch.Stop();
+			_stopWatch.Reset();
+			Trace.WriteLine("UNDO TRACK " + i);
 		}
 
 		private void ReleaseDevices()
@@ -61,7 +87,7 @@ namespace wpf_pedal_ui
 
 				_outputPedal?.Dispose();
 			}
-			catch(Exception e)
+			catch (Exception e)
 			{
 				txtOutput.Text = e.Message;
 			}
@@ -92,23 +118,31 @@ namespace wpf_pedal_ui
 
 		private void UpdateUI()
 		{
-			if (_mode == PedalMode.Record)
+			switch (_mode)
 			{
-				ledTrackOne.Background = (_selectedTrack == 0) ? _red : Brushes.Transparent;
-				ledTrackTwo.Background = (_selectedTrack == 1) ? _red : Brushes.Transparent;
-				ledTrackThree.Background = (_selectedTrack == 2) ? _red : Brushes.Transparent;
-				ledTrackFour.Background = (_selectedTrack == 3) ? _red : Brushes.Transparent;
+				case PedalMode.Record:
+					ledTrackOne.Background = _selectedTrack == 0 ? _red : Brushes.Transparent;
+					ledTrackTwo.Background = _selectedTrack == 1 ? _red : Brushes.Transparent;
+					ledTrackThree.Background = _selectedTrack == 2 ? _red : Brushes.Transparent;
+					ledTrackFour.Background = _selectedTrack == 3 ? _red : Brushes.Transparent;
+					break;
+
+				case PedalMode.Play:
+					ledTrackOne.Background = !_muteTrack[0] ? _green : Brushes.Transparent;
+					ledTrackTwo.Background = !_muteTrack[1] ? _green : Brushes.Transparent;
+					ledTrackThree.Background = !_muteTrack[2] ? _green : Brushes.Transparent;
+					ledTrackFour.Background = !_muteTrack[3] ? _green : Brushes.Transparent;
+					break;
+
+				default:
+					ledTrackOne.Background = Brushes.Transparent;
+					ledTrackTwo.Background = Brushes.Transparent;
+					ledTrackThree.Background = Brushes.Transparent;
+					ledTrackFour.Background = Brushes.Transparent;
+					break;
 			}
 
-			if (_mode == PedalMode.Play)
-			{
-				ledTrackOne.Background = (!_muteTrack[0]) ? _green : Brushes.Transparent;
-				ledTrackTwo.Background = (!_muteTrack[1]) ? _green : Brushes.Transparent;
-				ledTrackThree.Background = (!_muteTrack[2]) ? _green : Brushes.Transparent;
-				ledTrackFour.Background = (!_muteTrack[3]) ? _green : Brushes.Transparent;
-			}
-
-			if(_state == PedalState.Clear)
+			if (_state == PedalState.Clear)
 			{
 				ledPlayRec.Background = Brushes.White;
 				ledStop.Background = Brushes.White;
@@ -120,15 +154,35 @@ namespace wpf_pedal_ui
 			if (_state == PedalState.Overdub) ledPlayRec.Background = _orange; //overMode
 			if (_state == PedalState.Play) ledPlayRec.Background = _green; //playMode
 			ledStop.Background = (_state == PedalState.Stop) ? _blue : Brushes.Transparent; //stopMode
+
+			switch(_state)
+			{
+				case PedalState.Record:
+					guiProgress.Foreground = _red;
+					break;
+
+				case PedalState.Overdub:
+					guiProgress.Foreground = _orange;
+					break;
+
+				case PedalState.Play:
+					guiProgress.Foreground = _green;
+					break;
+
+				case PedalState.Stop:
+					guiProgress.Foreground = _green;
+					break;
+
+				default:
+					guiProgress.Foreground = _red;
+					break;
+			}
 		}
 
 		private void ChangeMode(PedalMode newMode = PedalMode.Auto)
 		{
-			if (_state == PedalState.Clear)
-				return;
-
-			if(newMode == PedalMode.Auto)
-				_mode = (_mode == PedalMode.Record) ? PedalMode.Play : PedalMode.Record;
+			if (newMode == PedalMode.Auto)
+				_mode = _mode == PedalMode.Record ? PedalMode.Play : PedalMode.Record;
 			else
 				_mode = newMode;
 
@@ -141,22 +195,45 @@ namespace wpf_pedal_ui
 				return;
 
 			_state = PedalState.Stop;
+			_loopTimer.Stop();
+			guiProgress.Value = 0;
 
 			UpdateUI();
 		}
 
 		private void ChangeState()
 		{
-			if (_state == PedalState.None) //None
-				_state = PedalState.Record; //switch to recMode
-			else if (_state == PedalState.Record) //recMode
-				_state = PedalState.Overdub; //switch to overMode
-			else if (_state == PedalState.Overdub) //overMode
-				_state = PedalState.Play; //switch to playMode
-			else if (_state == PedalState.Play) //playMode
-				_state = PedalState.Overdub; //switch to overMode
-			else if (_state == PedalState.Stop) //stopMode
-				_state = PedalState.Play; //switch to playMode
+			switch(_state)
+			{
+				case PedalState.None:
+					_state = PedalState.Record;
+					//Reset loopStopWatch and Start
+					_loopStopWatch.Reset();
+					_loopStopWatch.Start();
+					break;
+
+				case PedalState.Record:
+					_state = PedalState.Overdub;
+					//Stop loopStopWatch and set loopLength
+					_loopStopWatch.Stop();
+					_loopLength = _loopStopWatch.Elapsed.TotalSeconds;
+					_loopTimer.Interval = TimeSpan.FromSeconds(_loopLength / 60); //60 seconds per minute
+					_loopTimer.Start();
+					break;
+
+				case PedalState.Overdub:
+					_state = PedalState.Play;
+					break;
+
+				case PedalState.Play:
+					_state = PedalState.Overdub;
+					break;
+
+				case PedalState.Stop:
+					_state = PedalState.Play;
+					_loopTimer.Start();
+					break;
+			}
 
 			UpdateUI();
 		}
@@ -182,6 +259,9 @@ namespace wpf_pedal_ui
 		private void Clear()
 		{
 			_state = PedalState.Clear;
+
+			_loopTimer.Stop();
+			guiProgress.Value = 0;
 
 			Stop();
 			SendNotetoPedal(_midiNotes[0]);
@@ -215,8 +295,8 @@ namespace wpf_pedal_ui
 
 					if (_note.NoteNumber == _midiNotes[0]) txtOutput.Text = "CLEAR"; //Clear
 					if (_note.NoteNumber == _midiNotes[1]) txtOutput.Text = "STATE"; //Record/Overdub/Play
-					if (_note.NoteNumber == _midiNotes[2]) txtOutput.Text = "STOP"; //Stop all
-					if (_note.NoteNumber == _midiNotes[0] - 2) txtOutput.Text = "MODE"; //RecMode/PlayMode
+					if (_note.NoteNumber == _midiNotes[2]) Stop(); //Stop all
+					if (_note.NoteNumber == _midiNotes[0] - 2) ChangeMode(); //RecMode/PlayMode
 
 					//Track 1
 					if (_note.NoteNumber == _midiNotes[3]) SelectTrack(0);
@@ -288,8 +368,8 @@ namespace wpf_pedal_ui
 				_stopWatch.Start();
 			}
 			else
-			{ 
-				if(_stopWatch.Elapsed.Seconds >= 0.5)
+			{
+				if (_stopWatch.Elapsed.Seconds >= 0.5)
 				{
 					_stopWatch.Stop();
 					_stopWatch.Reset();
@@ -317,6 +397,9 @@ namespace wpf_pedal_ui
 		private void BtnTrackOne_PreviewMouseLeftButtonDown(object sender, System.Windows.Input.MouseButtonEventArgs e)
 		{
 			Trace.WriteLine("Mouse down TRACK 1");
+			_stopWatch.Reset();
+			_stopWatch.Start();
+
 			if (_mode == PedalMode.Record)
 			{
 				SelectTrack(0);
@@ -332,6 +415,8 @@ namespace wpf_pedal_ui
 		private void BtnTrackOne_PreviewMouseLeftButtonUp(object sender, System.Windows.Input.MouseButtonEventArgs e)
 		{
 			Trace.WriteLine("Mouse up TRACK 1");
+			_stopWatch.Stop();
+			_stopWatch.Reset();
 		}
 
 		private void BtnTrackTwo_PreviewMouseLeftButtonDown(object sender, System.Windows.Input.MouseButtonEventArgs e)

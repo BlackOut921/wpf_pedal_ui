@@ -31,10 +31,12 @@
 
         <!-- row 0 -->
         <Button Grid.Row="0" Grid.Column="7" Name="BtnScanDevices" Click="BtnScanDevices_Click">Scan devices</Button>
+        
+        <!-- row 1 -->
         <TextBlock Grid.Row="1" Grid.Column="6" Foreground="White" HorizontalAlignment="Center">Input From</TextBlock>
         <TextBlock Grid.Row="1" Grid.Column="7" Foreground="White" HorizontalAlignment="Center">Ouput To</TextBlock>
 
-        <!-- row 1 -->
+        <!-- row 2 -->
         <Button Background="white" Grid.Row="2" Grid.Column="2" Name="BtnClear" Click="BtnClear_Click">
             <TextBlock Foreground="black">CLEAR</TextBlock>
         </Button>
@@ -42,9 +44,10 @@
         <ListBox Name="InputDeviceList" Grid.Row="2" Grid.Column="6" Background="#303030" Foreground="White" SelectionChanged="InputDeviceList_SelectionChanged"></ListBox>
         <ListBox Name="OutputDeviceList" Grid.Row="2" Grid.Column="7" Background="#303030" Foreground="White" SelectionChanged="OutputDeviceList_SelectionChanged"/>
 
-        <!-- row 2 -->
-
         <!-- row 3 -->
+        <ProgressBar Name="guiProgress" Grid.Row="3" Grid.Column="1" Height="25" Minimum="0" Maximum="100" Value="50" Foreground="Red"></ProgressBar>
+
+        <!-- row 4 -->
         <Border Grid.Row="4" Grid.Column="0" Background="Transparent" Name="ledPlayRec"></Border>
         <Border Grid.Row="4" Grid.Column="1" Background="Transparent" Name="ledStop"></Border>
         <Border Grid.Row="4" Grid.Column="4" Background="Red" Name="ledTrackOne"></Border>
@@ -52,7 +55,7 @@
         <Border Grid.Row="4" Grid.Column="6" Background="Transparent" Name="ledTrackThree"></Border>
         <Border Grid.Row="4" Grid.Column="7" Background="Transparent" Name="ledTrackFour"></Border>
 
-        <!-- row 4 -->
+        <!-- row 5 -->
         <Button Background="Red" Grid.Row="5" Grid.Column="0" Name="BtnPlayRec" Click="BtnPlayRec_Click">
             <TextBlock Foreground="White">REC/PLAY</TextBlock>
         </Button>
